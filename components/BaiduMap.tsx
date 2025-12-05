@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Route } from '../types';
+import { RefreshCw } from 'lucide-react';
 
 interface BaiduMapProps {
   route: Route;
@@ -15,11 +16,15 @@ const BaiduMap: React.FC<BaiduMapProps> = ({ route }) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<any>(null);
   const [mapError, setMapError] = useState(false);
+  const [retryKey, setRetryKey] = useState(0);
 
   useEffect(() => {
     let intervalId: number;
     let attempts = 0;
-    const maxAttempts = 40; // 20 seconds timeout (increased)
+    const maxAttempts = 40; // 20 seconds timeout
+
+    // Reset error state when route or retryKey changes
+    setMapError(false);
 
     const renderMap = () => {
       // Safety check: container must exist
@@ -66,8 +71,6 @@ const BaiduMap: React.FC<BaiduMapProps> = ({ route }) => {
         route.stations.forEach((station, index) => {
           const pt = new BMap.Point(station.lng, station.lat);
           
-          // Use standard markers if custom icon fails, but here we try simple ones
-          // To ensure visibility, we can use default marker for debugging if needed
           const marker = new BMap.Marker(pt);
           
           // Label
@@ -99,7 +102,6 @@ const BaiduMap: React.FC<BaiduMapProps> = ({ route }) => {
             
             // Bus Marker
             const busMarker = new BMap.Marker(busPt);
-            // Use a large emoji as a simple, reliable icon
             const busLabel = new BMap.Label("🚌", { offset: new BMap.Size(-12, -12) });
             busLabel.setStyle({ border: 'none', background: 'transparent', fontSize: '24px' });
             
@@ -139,13 +141,20 @@ const BaiduMap: React.FC<BaiduMapProps> = ({ route }) => {
     return () => {
       if (intervalId) window.clearInterval(intervalId);
     };
-  }, [route]);
+  }, [route, retryKey]);
 
   if (mapError) {
     return (
-      <div className="w-full h-64 bg-gray-100 flex items-center justify-center rounded-lg text-gray-500 flex-col border border-gray-200">
-        <p className="font-medium">地图加载失败</p>
-        <p className="text-xs mt-2 text-gray-400">请检查网络或刷新页面</p>
+      <div className="w-full h-64 bg-gray-100 flex items-center justify-center rounded-lg text-gray-500 flex-col border border-gray-200 p-4 text-center">
+        <p className="font-medium text-gray-800">地图加载失败</p>
+        <p className="text-xs mt-1 text-gray-400 mb-3">可能由于API Key配置或网络限制</p>
+        <button 
+          onClick={() => setRetryKey(k => k + 1)}
+          className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50 active:scale-95 transition-transform"
+        >
+          <RefreshCw size={14} />
+          重试
+        </button>
       </div>
     );
   }
