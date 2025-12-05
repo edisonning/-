@@ -1,0 +1,7 @@
+{
+  "name": "CommuterLink",
+  "description": "Enterprise commuter bus booking system for employees.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
