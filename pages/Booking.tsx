@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Calendar as CalendarIcon, Clock, MapPin, CheckCircle2 } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, MapPin, CheckCircle2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { MOCK_ROUTES } from '../services/mockData';
 import { Route } from '../types';
 
@@ -7,22 +7,57 @@ const Booking: React.FC = () => {
   const [selectedDates, setSelectedDates] = useState<string[]>([]);
   const [selectedRoute, setSelectedRoute] = useState<Route | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [currentMonth, setCurrentMonth] = useState(new Date());
 
-  // Simple 7-day calendar generator
-  const generateDates = () => {
-    const dates = [];
-    const today = new Date();
-    for (let i = 1; i <= 14; i++) { // Next 2 weeks
-      const d = new Date(today);
-      d.setDate(today.getDate() + i);
-      dates.push(d);
-    }
-    return dates;
+  // Calendar Helpers
+  const getDaysInMonth = (date: Date) => {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const days = new Date(year, month + 1, 0).getDate();
+    return days;
   };
 
-  const dates = generateDates();
+  const getFirstDayOfMonth = (date: Date) => {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    return new Date(year, month, 1).getDay();
+  };
 
-  const toggleDate = (dateStr: string) => {
+  const changeMonth = (offset: number) => {
+    const newDate = new Date(currentMonth);
+    newDate.setMonth(newDate.getMonth() + offset);
+    setCurrentMonth(newDate);
+  };
+
+  const formatDate = (year: number, month: number, day: number) => {
+    return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  };
+
+  const isDateBookable = (date: Date) => {
+    const now = new Date();
+    // Normalize today to start of day for comparison
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    
+    // Calculate the last day of the *actual* current month
+    const endOfCurrentMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    endOfCurrentMonth.setHours(23, 59, 59, 999);
+    
+    // Normalize the target date to start of day
+    const targetDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
+    // 1. Past dates
+    if (targetDate < today) return { bookable: false, reason: '过期' };
+    
+    // 2. Future dates beyond current month
+    if (targetDate > endOfCurrentMonth) return { bookable: false, reason: '不可约' };
+    
+    // Weekends are now bookable for the current month
+    return { bookable: true, reason: '可预约' };
+  };
+
+  const toggleDate = (dateStr: string, bookable: boolean) => {
+    if (!bookable) return;
+    
     if (selectedDates.includes(dateStr)) {
       setSelectedDates(prev => prev.filter(d => d !== dateStr));
     } else {
@@ -42,36 +77,92 @@ const Booking: React.FC = () => {
     }, 2000);
   };
 
+  const renderCalendar = () => {
+    const daysInMonth = getDaysInMonth(currentMonth);
+    const firstDay = getFirstDayOfMonth(currentMonth);
+    const year = currentMonth.getFullYear();
+    const month = currentMonth.getMonth();
+    
+    const days = [];
+    
+    // Empty slots for previous month
+    for (let i = 0; i < firstDay; i++) {
+      days.push(<div key={`empty-${i}`} className="h-14"></div>);
+    }
+
+    // Days of current month
+    for (let i = 1; i <= daysInMonth; i++) {
+      const dateObj = new Date(year, month, i);
+      const dateStr = formatDate(year, month, i);
+      const { bookable, reason } = isDateBookable(dateObj);
+      const isSelected = selectedDates.includes(dateStr);
+
+      days.push(
+        <button
+          key={dateStr}
+          onClick={() => toggleDate(dateStr, bookable)}
+          disabled={!bookable}
+          className={`h-16 flex flex-col items-center justify-center rounded-lg border transition-all relative ${
+            isSelected
+              ? 'bg-blue-600 text-white border-blue-600 shadow-md z-10'
+              : bookable
+              ? 'bg-white text-gray-800 border-gray-100 hover:border-blue-300'
+              : 'bg-gray-50 text-gray-400 border-transparent cursor-not-allowed'
+          }`}
+        >
+          <span className={`text-sm font-bold ${isSelected ? 'text-white' : ''}`}>{i}</span>
+          <span className={`text-[10px] scale-90 ${
+            isSelected ? 'text-blue-100' : bookable ? 'text-green-600' : 'text-gray-400'
+          }`}>
+            {isSelected ? '已选' : reason}
+          </span>
+          {isSelected && (
+            <div className="absolute top-1 right-1 w-1.5 h-1.5 bg-white rounded-full"></div>
+          )}
+        </button>
+      );
+    }
+
+    return days;
+  };
+
   return (
     <div className="pb-24 p-4 space-y-6">
       
-      {/* 1. Date Selection */}
+      {/* 1. Date Selection (Calendar) */}
       <div className="space-y-3">
-        <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-          <CalendarIcon size={20} className="text-blue-600" />
-          选择日期 (可多选)
-        </h2>
-        <div className="grid grid-cols-4 gap-2">
-          {dates.map((date) => {
-            const dateStr = date.toISOString().split('T')[0];
-            const isSelected = selectedDates.includes(dateStr);
-            const dayName = ['日', '一', '二', '三', '四', '五', '六'][date.getDay()];
-            
-            return (
-              <button
-                key={dateStr}
-                onClick={() => toggleDate(dateStr)}
-                className={`p-2 rounded-lg text-center border transition-all ${
-                  isSelected 
-                    ? 'bg-blue-600 text-white border-blue-600 shadow-md' 
-                    : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300'
-                }`}
-              >
-                <div className="text-xs opacity-80">{date.getMonth() + 1}/{date.getDate()}</div>
-                <div className="font-bold text-sm">周{dayName}</div>
-              </button>
-            );
-          })}
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+            <CalendarIcon size={20} className="text-blue-600" />
+            选择日期
+          </h2>
+          <div className="flex items-center gap-4 bg-white px-3 py-1 rounded-full shadow-sm border border-gray-100">
+             <button onClick={() => changeMonth(-1)} className="p-1 hover:bg-gray-100 rounded-full text-gray-600">
+                <ChevronLeft size={18} />
+             </button>
+             <span className="text-sm font-bold text-gray-800">
+                {currentMonth.getFullYear()}年 {currentMonth.getMonth() + 1}月
+             </span>
+             <button onClick={() => changeMonth(1)} className="p-1 hover:bg-gray-100 rounded-full text-gray-600">
+                <ChevronRight size={18} />
+             </button>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-2">
+           {/* Weekday Headers */}
+           <div className="grid grid-cols-7 mb-2">
+              {['日', '一', '二', '三', '四', '五', '六'].map((day, idx) => (
+                <div key={day} className={`text-center text-xs font-medium ${idx === 0 || idx === 6 ? 'text-orange-500' : 'text-gray-500'}`}>
+                  {day}
+                </div>
+              ))}
+           </div>
+           
+           {/* Calendar Grid */}
+           <div className="grid grid-cols-7 gap-1">
+              {renderCalendar()}
+           </div>
         </div>
       </div>
 
@@ -97,19 +188,12 @@ const Booking: React.FC = () => {
                   <CheckCircle2 size={16} />
                 </div>
               )}
-              <div className="flex justify-between items-start mb-2">
+              <div className="flex justify-between items-center">
                 <h3 className="font-bold text-gray-800">{route.name}</h3>
                 <div className="flex items-center text-sm font-medium text-gray-600 bg-gray-100 px-2 py-1 rounded">
                   <Clock size={14} className="mr-1" />
                   {route.startTime} - {route.endTime}
                 </div>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-gray-500">
-                <span className="w-2 h-2 rounded-full bg-green-500"></span>
-                {route.startStation}
-                <span className="text-gray-300">→</span>
-                <span className="w-2 h-2 rounded-full bg-red-500"></span>
-                {route.endStation}
               </div>
             </div>
           ))}

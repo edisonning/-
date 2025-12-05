@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { MOCK_RESERVATIONS } from '../services/mockData';
-import { ReservationStatus } from '../types';
+import { ReservationStatus, Reservation } from '../types';
 import { Bus, Calendar, MapPin, Search } from 'lucide-react';
 
 const statusColors: Record<ReservationStatus, string> = {
@@ -14,10 +13,15 @@ const statusColors: Record<ReservationStatus, string> = {
   [ReservationStatus.EXPIRED]: 'bg-gray-100 text-gray-400',
 };
 
-const History: React.FC = () => {
+interface HistoryProps {
+  reservations: Reservation[];
+  onCancel: (id: string) => void;
+}
+
+const History: React.FC<HistoryProps> = ({ reservations, onCancel }) => {
   const [filter, setFilter] = useState<string>('all');
 
-  const filteredReservations = MOCK_RESERVATIONS.filter(res => {
+  const filteredReservations = reservations.filter(res => {
     if (filter === 'all') return true;
     return res.status === filter;
   });
@@ -80,11 +84,23 @@ const History: React.FC = () => {
                     <Bus size={16} className="text-blue-500" />
                     <span>{res.routeName}</span>
                   </div>
-                  {res.plateNumber && (
-                    <div className="bg-blue-50 text-blue-700 px-2 py-1 rounded text-xs font-mono font-bold">
-                      {res.plateNumber}
-                    </div>
-                  )}
+                  
+                  <div className="flex items-center gap-2">
+                    {res.plateNumber && (
+                        <div className="bg-blue-50 text-blue-700 px-2 py-1 rounded text-xs font-mono font-bold">
+                        {res.plateNumber}
+                        </div>
+                    )}
+                    
+                    {res.status === ReservationStatus.PENDING && (
+                        <button 
+                          onClick={() => onCancel(res.id)}
+                          className="px-3 py-1 rounded-full border border-red-200 text-red-600 text-xs font-medium active:bg-red-50"
+                        >
+                          取消预约
+                        </button>
+                    )}
+                  </div>
                </div>
             </div>
           ))

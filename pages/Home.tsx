@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { MapPin, Clock, Users, Navigation, BusFront } from 'lucide-react';
-import { User, Reservation, Route, ReservationStatus } from '../types';
+import { Clock, Navigation, BusFront, ArrowLeft, ChevronRight, Users, MapPin } from 'lucide-react';
+import { User, Reservation } from '../types';
 import { MOCK_ROUTES, MOCK_PASSENGERS } from '../services/mockData';
 import BaiduMap from '../components/BaiduMap';
 
@@ -15,11 +15,8 @@ const Home: React.FC<HomeProps> = ({ user, todayReservation }) => {
     ? MOCK_ROUTES.find(r => r.id === todayReservation.routeId) 
     : null;
 
-  const [passengers, setPassengers] = useState(MOCK_PASSENGERS);
-
-  const toggleBoarding = (id: string) => {
-    setPassengers(prev => prev.map(p => p.id === id ? { ...p, boarded: !p.boarded } : p));
-  };
+  const [passengers] = useState(MOCK_PASSENGERS);
+  const [showPassengerList, setShowPassengerList] = useState(false);
 
   if (!todayReservation || !activeRoute) {
     return (
@@ -31,20 +28,97 @@ const Home: React.FC<HomeProps> = ({ user, todayReservation }) => {
     );
   }
 
+  // Dedicated Passenger List View
+  if (showPassengerList) {
+    return (
+      <div className="pb-24 min-h-full bg-white animate-in slide-in-from-right duration-200">
+        <div className="sticky top-0 z-20 bg-white border-b border-gray-100 p-4 flex items-center gap-3 shadow-sm">
+          <button 
+            onClick={() => setShowPassengerList(false)}
+            className="p-2 -ml-2 text-gray-600 hover:bg-gray-50 rounded-full transition-colors"
+          >
+            <ArrowLeft size={24} />
+          </button>
+          <div>
+            <h2 className="text-lg font-bold text-gray-900">同乘人员名单</h2>
+            <div className="text-xs text-gray-500">
+                当前车次: {activeRoute.name}
+            </div>
+          </div>
+          <div className="ml-auto flex flex-col items-end">
+             <span className="text-2xl font-bold text-blue-600">
+                {passengers.length}
+                <span className="text-sm text-gray-400 font-normal">人</span>
+             </span>
+             <span className="text-xs text-gray-400">共计</span>
+          </div>
+        </div>
+        
+        <div className="p-4 space-y-3">
+            {passengers.map(passenger => (
+              <div 
+                key={passenger.id} 
+                className="flex items-center justify-between p-4 rounded-xl border bg-white border-gray-100 shadow-sm"
+              >
+                <div>
+                  <div className="flex items-center gap-2">
+                      <span className="font-bold text-lg text-gray-900">
+                        {passenger.name}
+                      </span>
+                  </div>
+                  <div className="text-sm text-gray-500 mt-1 flex items-center gap-1">
+                    <MapPin size={12}/>
+                    {passenger.onStation} <span className="text-gray-300">→</span> {passenger.offStation}
+                  </div>
+                </div>
+                <div className={`px-2.5 py-1 rounded text-xs font-medium border ${
+                  passenger.boarded 
+                    ? 'bg-green-50 text-green-600 border-green-200' 
+                    : 'bg-gray-50 text-gray-400 border-gray-200'
+                }`}>
+                  {passenger.boarded ? '已上车' : '未上车'}
+                </div>
+              </div>
+            ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Normal Home View
   return (
     <div className="pb-24 space-y-4 p-4">
       {/* Ticket Card */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="bg-blue-600 p-4 text-white flex justify-between items-center">
-          <div>
-            <h2 className="text-lg font-bold">{activeRoute.name}</h2>
-            <div className="text-blue-100 text-xs mt-1 flex items-center gap-1">
-              <Clock size={12} /> 发车: {activeRoute.startTime}
+        <div className="bg-blue-600 p-4 text-white">
+          <div className="flex justify-between items-start">
+            <div>
+              <h2 className="text-lg font-bold">{activeRoute.name}</h2>
+              <div className="text-blue-100 text-xs mt-1 flex items-center gap-1">
+                <Clock size={12} /> 发车: {activeRoute.startTime}
+              </div>
+            </div>
+            <div className="bg-white/20 px-3 py-1 rounded-full text-sm backdrop-blur-sm">
+              {todayReservation.status}
             </div>
           </div>
-          <div className="bg-white/20 px-3 py-1 rounded-full text-sm backdrop-blur-sm">
-            {todayReservation.status}
-          </div>
+
+          {/* Captain Access Link */}
+          {user.isCaptain && (
+             <div 
+                className="mt-4 pt-3 border-t border-blue-500/50 flex items-center justify-between cursor-pointer hover:bg-blue-700/20 -mx-4 px-4 -mb-4 pb-4 transition-colors" 
+                onClick={() => setShowPassengerList(true)}
+             >
+                <div className="flex items-center gap-2 text-sm font-medium text-blue-50">
+                    <Users size={18} />
+                    <span>查看同乘人员</span>
+                    <span className="bg-blue-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">
+                        {passengers.length}
+                    </span>
+                </div>
+                <ChevronRight size={18} className="text-blue-300" />
+             </div>
+          )}
         </div>
         
         <div className="p-4 relative">
@@ -92,40 +166,6 @@ const Home: React.FC<HomeProps> = ({ user, todayReservation }) => {
           ))}
         </div>
       </div>
-
-      {/* Captain View: Passenger List */}
-      {user.isCaptain && (
-        <div className="bg-white rounded-xl shadow-sm p-4">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-gray-800 flex items-center gap-2">
-              <Users size={18} className="text-blue-600" />
-              同乘人员 ({passengers.filter(p => p.boarded).length}/{passengers.length})
-            </h3>
-          </div>
-          <div className="space-y-2">
-            {passengers.map(passenger => (
-              <div key={passenger.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-100">
-                <div>
-                  <div className="font-medium text-gray-900">{passenger.name}</div>
-                  <div className="text-xs text-gray-500 mt-1">
-                    {passenger.onStation} <span className="text-gray-300">→</span> {passenger.offStation}
-                  </div>
-                </div>
-                <button
-                  onClick={() => toggleBoarding(passenger.id)}
-                  className={`px-3 py-1.5 text-xs font-medium rounded-full transition-colors ${
-                    passenger.boarded 
-                      ? 'bg-green-100 text-green-700 border border-green-200' 
-                      : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
-                  }`}
-                >
-                  {passenger.boarded ? '已上车' : '未上车'}
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 };

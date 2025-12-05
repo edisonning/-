@@ -6,12 +6,13 @@ import Booking from './pages/Booking';
 import History from './pages/History';
 import Profile from './pages/Profile';
 import { CURRENT_USER, MOCK_RESERVATIONS } from './services/mockData';
-import { User, Reservation } from './types';
+import { User, Reservation, ReservationStatus } from './types';
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [activeTab, setActiveTab] = useState<'home' | 'booking' | 'history' | 'profile'>('home');
   const [user, setUser] = useState<User | null>(null);
+  const [reservations, setReservations] = useState<Reservation[]>(MOCK_RESERVATIONS);
 
   const handleLogin = () => {
     setUser(CURRENT_USER);
@@ -24,9 +25,17 @@ function App() {
     setActiveTab('home');
   };
 
+  const handleCancelReservation = (id: string) => {
+    if (window.confirm('确定要取消此次行程吗？')) {
+      setReservations(prev => prev.map(r => 
+        r.id === id ? { ...r, status: ReservationStatus.CANCELLED } : r
+      ));
+    }
+  };
+
   // Logic to find today's active reservation
   const todayStr = new Date().toISOString().split('T')[0];
-  const todayReservation = MOCK_RESERVATIONS.find(r => r.date === todayStr);
+  const todayReservation = reservations.find(r => r.date === todayStr);
 
   if (!isLoggedIn) {
     return <Login onLogin={handleLogin} />;
@@ -39,7 +48,7 @@ function App() {
       <main className="h-full overflow-y-auto scrollbar-hide">
         {activeTab === 'home' && user && <Home user={user} todayReservation={todayReservation} />}
         {activeTab === 'booking' && <Booking />}
-        {activeTab === 'history' && <History />}
+        {activeTab === 'history' && <History reservations={reservations} onCancel={handleCancelReservation} />}
         {activeTab === 'profile' && user && <Profile user={user} onLogout={handleLogout} />}
       </main>
 
