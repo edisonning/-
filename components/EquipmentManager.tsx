@@ -1,13 +1,13 @@
+
 import React, { useState, useMemo } from 'react';
 import { 
   Search, Filter, Plus, CornerDownLeft, ArrowRightLeft, 
-  Sparkles, Package, Truck, CheckCircle, LayoutGrid, AlertCircle
+  Package, Truck, CheckCircle, LayoutGrid, AlertCircle
 } from 'lucide-react';
 import { INITIAL_EQUIPMENT, MOCK_PROVIDERS } from '../constants';
 import { Equipment, EquipmentStatus, ActionType, Stats } from '../types';
 import { ActionModal } from './ActionModal';
 import { StatsOverview } from './StatsOverview';
-import { analyzeInventoryDistribution } from '../services/geminiService';
 
 export const EquipmentManager: React.FC = () => {
   // State
@@ -19,10 +19,6 @@ export const EquipmentManager: React.FC = () => {
   // Modal State
   const [modalOpen, setModalOpen] = useState(false);
   const [modalType, setModalType] = useState<ActionType | null>(null);
-
-  // AI Insights State
-  const [aiInsight, setAiInsight] = useState<string | null>(null);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   // Derived Statistics
   const stats: Stats = useMemo(() => ({
@@ -126,13 +122,6 @@ export const EquipmentManager: React.FC = () => {
     setModalType(null);
   };
 
-  const handleAiAnalysis = async () => {
-    setIsAnalyzing(true);
-    const insight = await analyzeInventoryDistribution(equipmentList, MOCK_PROVIDERS);
-    setAiInsight(insight);
-    setIsAnalyzing(false);
-  };
-
   const getProviderName = (id: string | null) => {
     if (!id) return '-';
     return MOCK_PROVIDERS.find(p => p.id === id)?.name || '未知';
@@ -170,18 +159,10 @@ export const EquipmentManager: React.FC = () => {
 
   return (
     <div>
-        {/* Statistics & AI Insight */}
+        {/* Statistics */}
         <div className="mb-8">
            <div className="flex justify-between items-end mb-4">
               <h2 className="text-lg font-semibold text-slate-800">设备总览</h2>
-              <button 
-                onClick={handleAiAnalysis}
-                disabled={isAnalyzing}
-                className="text-sm flex items-center space-x-2 text-blue-600 hover:text-blue-800 font-medium transition-colors disabled:opacity-50"
-              >
-                <Sparkles className="w-4 h-4" />
-                <span>{isAnalyzing ? "正在分析..." : "AI 库存智能洞察"}</span>
-              </button>
            </div>
 
            <StatsOverview 
@@ -193,18 +174,6 @@ export const EquipmentManager: React.FC = () => {
                 stat3: <CheckCircle className="w-6 h-6 text-indigo-600" />
              }}
            />
-
-           {aiInsight && (
-             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 p-4 rounded-xl mb-6 text-sm text-slate-700 leading-relaxed shadow-sm animate-fade-in">
-                <div className="flex items-start space-x-2">
-                   <Sparkles className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
-                   <div>
-                     <span className="font-semibold text-blue-800 block mb-1">Gemini 分析报告:</span>
-                     {aiInsight}
-                   </div>
-                </div>
-             </div>
-           )}
         </div>
 
         {/* Action Toolbar */}
