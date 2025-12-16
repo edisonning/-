@@ -1,0 +1,5 @@
+{
+  "name": "车组管理",
+  "description": "申报主体用于管理服务商之间北斗设备分配、回收和调拨的综合仪表盘。",
+  "requestFramePermissions": []
+}
