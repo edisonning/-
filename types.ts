@@ -17,6 +17,12 @@ export interface ServiceProvider {
   region: string;
 }
 
+export interface TerminalModel {
+  id: string;
+  name: string;
+  createDate: string;
+}
+
 export interface Equipment {
   id: string;
   serialNumber: string;

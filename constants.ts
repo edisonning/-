@@ -1,5 +1,5 @@
 
-import { Equipment, EquipmentStatus, ServiceProvider, Vehicle, VehicleStatus, VehicleGroup } from "./types";
+import { Equipment, EquipmentStatus, ServiceProvider, Vehicle, VehicleStatus, VehicleGroup, TerminalModel } from "./types";
 
 export const MOCK_PROVIDERS: ServiceProvider[] = [
   { id: 'sp_1', name: '阿尔法技术服务', region: '北部大区' },
@@ -15,10 +15,17 @@ export const MOCK_GROUPS: VehicleGroup[] = [
   { id: 'g_1_2', name: '普货运输组', parentId: 'g_1' },
 ];
 
+export const INITIAL_MODELS: TerminalModel[] = [
+  { id: 'm_1', name: 'BD-X100 型', createDate: '2023-10-12' },
+  { id: 'm_2', name: 'BD-Pro-2000 型', createDate: '2023-11-05' },
+  { id: 'm_3', name: 'BD-Lite-50 型', createDate: '2024-01-20' },
+  { id: 'm_4', name: 'BD-Gen3-Ultra', createDate: '2024-03-15' },
+];
+
 const generateMockEquipment = (count: number): Equipment[] => {
   const equipments: Equipment[] = [];
   const manufacturers = ['北斗系统公司', '星网导航集团', '轨道装备科技'];
-  const models = ['BD-X100 型', 'BD-Pro-2000 型', 'BD-Lite-50 型'];
+  const models = INITIAL_MODELS.map(m => m.name);
 
   for (let i = 0; i < count; i++) {
     const isAllocated = Math.random() > 0.4;

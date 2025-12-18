@@ -1,11 +1,12 @@
 
 import React, { useState } from 'react';
-import { Server, Truck, Users } from 'lucide-react';
+import { Server, Truck, Users, Smartphone } from 'lucide-react';
 import { EquipmentManager } from './components/EquipmentManager';
 import { VehicleManager } from './components/VehicleManager';
 import { GroupManager } from './components/GroupManager';
+import { TerminalModelManager } from './components/TerminalModelManager';
 
-type ViewMode = 'EQUIPMENT' | 'VEHICLE' | 'GROUP';
+type ViewMode = 'EQUIPMENT' | 'VEHICLE' | 'GROUP' | 'MODEL';
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<ViewMode>('EQUIPMENT');
@@ -29,6 +30,14 @@ const App: React.FC = () => {
              >
                <Server className="w-5 h-5" />
                <span className="font-medium">设备分配</span>
+             </button>
+
+             <button 
+               onClick={() => setCurrentView('MODEL')}
+               className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all ${currentView === 'MODEL' ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+             >
+               <Smartphone className="w-5 h-5" />
+               <span className="font-medium">终端型号</span>
              </button>
              
              <button 
@@ -76,6 +85,12 @@ const App: React.FC = () => {
                   <Server className="w-5 h-5" />
                 </button>
                 <button 
+                   onClick={() => setCurrentView('MODEL')}
+                   className={`p-2 rounded-lg ${currentView === 'MODEL' ? 'bg-blue-50 text-blue-600' : 'text-slate-500'}`}
+                >
+                  <Smartphone className="w-5 h-5" />
+                </button>
+                <button 
                    onClick={() => setCurrentView('VEHICLE')}
                    className={`p-2 rounded-lg ${currentView === 'VEHICLE' ? 'bg-blue-50 text-blue-600' : 'text-slate-500'}`}
                 >
@@ -93,6 +108,7 @@ const App: React.FC = () => {
 
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in">
            {currentView === 'EQUIPMENT' && <EquipmentManager />}
+           {currentView === 'MODEL' && <TerminalModelManager />}
            {currentView === 'VEHICLE' && <VehicleManager />}
            {currentView === 'GROUP' && <GroupManager />}
         </main>
